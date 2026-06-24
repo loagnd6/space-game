@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Space Explorer",
+    "slug": "space-game",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "spacegame",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0B0E1A"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.spacegame"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-web-browser",
+      "expo-status-bar"
+    ]
+  }
+}
