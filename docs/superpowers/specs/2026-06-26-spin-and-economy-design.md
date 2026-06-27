@@ -22,7 +22,7 @@ Three interlocking systems: a spin wheel (gambling hook), a player-driven auctio
 | Premium Spin | N/A | Real money (direct purchase) | 1 per day, server-enforced |
 
 - **Free Spin** recharges on a 4-hour timer server-side. Client displays countdown.
-- **Spin Tickets** drop from raids, daily missions, and seasonal rewards. Stored in player inventory. Fully tradeable on the auction house.
+- **Spin Tickets** are rare — a dedicated player earns a few per week. Sources: occasional raid drop (~10% chance per win), rare daily mission reward (not every mission), exploration milestones, and a small seasonal bonus. Stored in player inventory. Fully tradeable on the auction house — their scarcity gives them real Lumen value.
 - **Premium Spin** is a direct one-time daily IAP (no middle currency). Soul-bound — cannot be traded or gifted.
 
 ### 1.2 Loot Table
@@ -91,7 +91,7 @@ Lumens are the sole marketplace currency. They are:
 |------|-----------|
 | Resources (Ore, Crystal, Gas, Water) | ✅ |
 | Boost Tokens | ✅ |
-| Blueprints (planet buildings) | ✅ |
+| Blueprints (planet buildings) | ❌ Soul-bound |
 | Ship components (all tiers) | ✅ |
 | Ship part fragments | ✅ |
 | Spin Tickets | ✅ |
@@ -189,9 +189,14 @@ Each slot has exactly one Ultra-Rare component variant with a unique ability. Ab
 
 Blueprints are no longer tied to ships. They are now **planet building unlocks** — like Clash of Clans town hall gates. A Blueprint for a given building type must be owned before that building can be constructed on any planet, regardless of slot availability or resources.
 
-- Blueprints drop from raids and seasonal rewards
-- Blueprints are tradeable on the auction house
+- **Soul-bound** — Blueprints cannot be traded. Players must grind for every one they own.
+- **Sources (multiple grind loops):**
+  - Raid drops — chance on every raid win, scales with defender strength
+  - Daily missions — occasional milestone reward, not every mission
+  - Exploration discoveries — finding Anomaly, Void, Singularity, or Dark Relic worlds has a chance to drop a Blueprint
+  - Seasonal placement — small Blueprint bundle awarded at season end for all ranked players
 - Blueprint types map to building slot types: Mining, Shipyard, Research, Defense (advanced tiers of each)
+- Scarcity is intentional — players should spend weeks grinding for a specific Blueprint they want
 
 ### 3.6 Supabase Tables
 
