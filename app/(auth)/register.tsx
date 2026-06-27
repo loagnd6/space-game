@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 4,
+    paddingVertical: SPACING.md,
     fontSize: FONT.md,
     marginBottom: SPACING.md,
   },
