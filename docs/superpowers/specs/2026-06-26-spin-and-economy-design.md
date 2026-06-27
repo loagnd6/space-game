@@ -1,13 +1,13 @@
-# Spin System & Player Economy Design
+# Spin System, Player Economy & Ship Components Design
 **Date:** 2026-06-26  
 **Status:** Approved  
-**Scope:** Daily Spin wheel + Auction House economy using Lumens currency
+**Scope:** Daily Spin wheel + Auction House economy (Lumens) + Ship component system
 
 ---
 
 ## Overview
 
-Two interlocking systems that add a gambling hook (spin wheel) and a player-driven economy (auction house). Both are built on the hybrid server-authoritative architecture: spin results and Lumen balances are resolved server-side via Supabase Edge Functions; auction house integrity is enforced through Supabase RLS and DB constraints.
+Three interlocking systems: a spin wheel (gambling hook), a player-driven auction house economy (Lumens currency), and a ship component system (4 slots × 5 tiers). All built on the hybrid server-authoritative architecture — spin results and Lumen balances are resolved server-side via Supabase Edge Functions; auction house integrity is enforced through Supabase RLS and DB constraints.
 
 ---
 
@@ -31,13 +31,16 @@ Two interlocking systems that add a gambling hook (spin wheel) and a player-driv
 |------|--------|---------|
 | Common | 60% | Small resource bundles (Ore ×500, Crystal ×200, Gas ×150, Water ×100) |
 | Uncommon | 25% | Boost Tokens, medium resource bundles, ship part fragments |
-| Rare | 12% | Full Blueprints, large resource bundles, multi-Boost drops |
-| Legendary | 3% | Spin-exclusive cosmetic skins (tradeable), rare complete ship parts |
+| Rare | 12% | Blueprints, large resource bundles, multi-Boost drops, Rare ship components |
+| Legendary | 2.5% | Spin-exclusive cosmetic skins (tradeable), Legendary ship components |
+| Ultra-Rare | 0.5% | Ultra-Rare ship components (unique abilities, see Section 3) |
+
+Total: 100%
 
 ### 1.3 Pity System
 
-- Every 50 spins without a Legendary guarantees the next spin is Legendary.
-- Pity counter is tracked server-side per player and resets on each Legendary drop.
+- Every 50 spins without a Legendary or better guarantees the next spin is Legendary or better.
+- Pity counter tracked server-side per player, resets on any Legendary or Ultra-Rare drop.
 - Counter is shared across Free, Ticket, and Premium spins — all spins count toward pity.
 
 ### 1.4 Spin Resolution Flow
@@ -59,8 +62,8 @@ The client never knows the result before the server returns it. Animation plays 
 ### 1.5 Supabase Tables
 
 ```sql
-spin_state         — player_id, free_spin_available_at, premium_spin_used_date, pity_counter
-spin_history       — id, player_id, spin_type, tier, item_type, item_id, spun_at
+spin_state    — player_id, free_spin_available_at, premium_spin_used_date, pity_counter
+spin_history  — id, player_id, spin_type, tier, item_type, item_id, spun_at
 ```
 
 ---
@@ -88,8 +91,9 @@ Lumens are the sole marketplace currency. They are:
 |------|-----------|
 | Resources (Ore, Crystal, Gas, Water) | ✅ |
 | Boost Tokens | ✅ |
-| Blueprints | ✅ |
-| Ship parts / fragments | ✅ |
+| Blueprints (planet buildings) | ✅ |
+| Ship components (all tiers) | ✅ |
+| Ship part fragments | ✅ |
 | Spin Tickets | ✅ |
 | Spin-won cosmetic skins | ✅ |
 | Seasonal reward cosmetics (Gold/Silver/Bronze) | ❌ Soul-bound |
@@ -139,19 +143,80 @@ marketplace_listings — id, seller_id, item_type, item_data jsonb, price_lumens
 
 ---
 
-## 3. Integration with Existing Systems
+## 3. Ship Component System
 
-- **Raids** → drop Lumens + chance of Spin Ticket reward
-- **Daily missions** (new system, not yet designed) → primary Lumen + Spin Ticket source
-- **Seasonal rewards** → Lumen bonus at season end; Gold/Silver/Bronze cosmetics soul-bound
-- **Inventory** → single `player_inventory` table backing spin drops, marketplace transfers, and resource storage
-- **`src/constants/game.ts`** → all tunable values: loot weights, Lumen drop amounts, pity threshold (50), listing cap (5), fee (5%), listing duration (7 days)
+### 3.1 Overview
+
+Every player starts with a base ship equipped with Common-tier components in all 4 slots. Ships and their components **carry over season to season** — players keep their collection permanently. Balance between veterans and new players is managed through matchmaking brackets and territory mechanics, not seasonal resets.
+
+Ultra-Rare components are strong but not unbeatable. A well-composed full Legendary build (4 Legendary parts with good slot synergy) beats a mixed Ultra-Rare build (1 Ultra-Rare + 2 Rares + 1 Common). Build composition matters as much as tier.
+
+Live balancing (buffs/nerfs to ability values) is the tuning mechanism if Ultra-Rare components become dominant in practice.
+
+### 3.2 Component Slots
+
+| Slot | Role |
+|------|------|
+| Hull | HP pool and damage mitigation |
+| Weapons | Attack damage and fire rate |
+| Shields | Damage absorption before hull takes hits |
+| Engine | Speed, initiative, and maneuverability |
+
+### 3.3 Component Tiers
+
+| Tier | Stat Multiplier | Unique Ability | How Obtained |
+|------|----------------|----------------|--------------|
+| Common | 1.0x | None | Base ship (everyone starts here) |
+| Uncommon | 1.3x | None | Spin (fragments — combine 3 to build one) |
+| Rare | 1.7x | None | Spin drop / Auction House |
+| Legendary | 2.2x | None | Spin drop (2.5%) / Auction House |
+| Ultra-Rare | 2.5x | Yes (see below) | Spin drop (0.5%) / Auction House |
+
+Uncommon fragments: 3 fragments of the same slot combine into one Uncommon component. Fragments are tradeable individually.
+
+### 3.4 Ultra-Rare Abilities
+
+Each slot has exactly one Ultra-Rare component variant with a unique ability. Ability values are stored in `src/constants/game.ts` for live tuning without a code deploy.
+
+| Slot | Name | Ability |
+|------|------|---------|
+| Hull | **Iron Tomb** | Immune to all opponent ability effects — once per battle. After the block triggers, Iron Tomb becomes a standard 2.5x hull for the remainder of that battle. |
+| Weapons | **Phase Cannon** | Each shot has a 20% chance to bypass shields entirely and deal damage directly to the enemy hull. |
+| Engine | **Overdrive** | At battle start, sacrifice 10% of own HP to deal an immediate burst of damage to the opponent before normal combat begins. |
+| Shields | **Echo Shell** | Reflects 15% of incoming damage back to the attacker. Triggers a maximum of **2 times per battle**, then functions as a standard 2.5x shield. |
+
+### 3.5 Blueprints (Repurposed)
+
+Blueprints are no longer tied to ships. They are now **planet building unlocks** — like Clash of Clans town hall gates. A Blueprint for a given building type must be owned before that building can be constructed on any planet, regardless of slot availability or resources.
+
+- Blueprints drop from raids and seasonal rewards
+- Blueprints are tradeable on the auction house
+- Blueprint types map to building slot types: Mining, Shipyard, Research, Defense (advanced tiers of each)
+
+### 3.6 Supabase Tables
+
+```sql
+player_ships        — player_id, hull_component_id, weapons_component_id, shields_component_id, engine_component_id
+ship_components     — id, player_id, slot_type, tier, is_equipped, acquired_at
+component_fragments — id, player_id, slot_type, count
+```
 
 ---
 
-## 4. What's Not In Scope
+## 4. Integration with Existing Systems
+
+- **Raids** → drop Lumens + chance of Spin Ticket + Blueprint drops
+- **Daily missions** (not yet designed) → primary Lumen + Spin Ticket source
+- **Seasonal rewards** → Lumen bonus at season end; Gold/Silver/Bronze cosmetics soul-bound; Blueprint drops
+- **Inventory** → single `player_inventory` table backing spin drops, marketplace transfers, resource storage, and component fragments
+- **`src/constants/game.ts`** → all tunable values: loot weights, stat multipliers, ability proc rates (Phase Cannon 20%, Echo Shell 15%/2x, Overdrive 10% HP cost), Lumen drop amounts, pity threshold (50), listing cap (5), fee (5%), listing duration (7 days)
+
+---
+
+## 5. What's Not In Scope
 
 - Bidding / auction countdown (fixed price only for v1)
 - Player-to-player direct trades (auction house only for v1)
-- Daily missions system (referenced as Lumen source but designed separately)
+- Daily missions system (referenced as Lumen/Ticket source but designed separately)
 - IAP integration / app store payment flow (separate implementation)
+- Multi-ship fleets (single ship per player for v1; fleet expansion is a later feature)
