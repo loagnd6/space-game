@@ -36,10 +36,14 @@ export const useSpinStore = create<SpinStore>((set) => ({
   spin: async (spinType: SpinType) => {
     set({ isSpinning: true });
     const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      set({ isSpinning: false });
+      throw new Error('Not authenticated');
+    }
     const res = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/spin`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session?.access_token}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ spinType }),
