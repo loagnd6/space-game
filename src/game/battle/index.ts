@@ -1,18 +1,15 @@
-/**
- * Battle system — deterministic combat loop.
- * All math must use SeededRNG, never Math.random() (see CLAUDE.md Critical Rules).
- * See skills/battle-systems.md.
- */
-import type { Fleet } from '@/src/types';
+import { SeededRNG } from '../rng';
+import { resolveBattle } from '../ships/CombatEngine';
+import type { PlayerShip } from '../ships/types';
 
-export interface BattleState {
-  tick: number;
-  attacker: Fleet;
-  defender: Fleet;
-  done: boolean;
-}
+export type { BattleResult, BattleEvent } from '../ships/types';
 
-/** TODO: advance the battle by one fixed step. Must be deterministic + reversible. */
-export function updateBattle(state: BattleState): BattleState {
-  return { ...state, tick: state.tick + 1 };
+/** Resolve a battle between two ships deterministically. */
+export function startBattle(
+  attacker: PlayerShip,
+  defender: PlayerShip,
+  seed: number,
+) {
+  const rng = new SeededRNG(seed);
+  return resolveBattle(attacker, defender, rng);
 }
