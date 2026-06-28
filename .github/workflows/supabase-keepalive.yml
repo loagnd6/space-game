@@ -13,8 +13,7 @@ jobs:
       - name: Ping Supabase health endpoint
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
+            "${{ secrets.SUPABASE_URL }}/health")
           echo "Response status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "Unexpected status $STATUS — check project health"
