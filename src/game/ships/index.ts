@@ -1,4 +1,5 @@
 export { resolveBattle, buildCombatant } from './CombatEngine';
+export { canCombine, combineFragments } from './FragmentCombiner';
 export type {
   ComponentSlot,
   ComponentTier,
@@ -10,3 +11,4 @@ export type {
   BattleEvent,
   BattleEventType,
 } from './types';
+export type { CombineResult } from './FragmentCombiner';
