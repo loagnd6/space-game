@@ -68,6 +68,12 @@ serve(async (req) => {
   if (authError || !user) return new Response('Unauthorized', { status: 401 });
 
   const { spinType }: { spinType: SpinType } = await req.json();
+
+  const VALID_SPIN_TYPES = ['free', 'ticket', 'premium'] as const;
+  if (!VALID_SPIN_TYPES.includes(spinType)) {
+    return new Response(JSON.stringify({ error: 'Invalid spinType' }), { status: 400 });
+  }
+
   const playerId = user.id;
   const now = new Date();
 

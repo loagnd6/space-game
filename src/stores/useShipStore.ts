@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ShipComponent, ComponentSlot } from '@/src/game/ships/types';
-import { canCombine, combineFragments } from '@/src/game/ships';
+import { canCombine } from '@/src/game/ships';
 import { supabase } from '@/src/services/supabase';
 
 interface ShipStore {
@@ -49,14 +49,29 @@ export const useShipStore = create<ShipStore>((set, get) => ({
   combineFragmentsForSlot: async (slot: ComponentSlot) => {
     const count = get().fragmentCounts[slot];
     if (!canCombine(count)) return null;
-    const { component, fragmentsRemaining } = combineFragments(slot, count);
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
-    await Promise.all([
-      supabase.from('ship_components').insert({ ...component, player_id: session.user.id }),
-      supabase.from('component_fragments')
-        .upsert({ player_id: session.user.id, slot_type: slot, count: fragmentsRemaining }, { onConflict: 'player_id,slot_type' }),
-    ]);
+
+    const res = await fetch(
+      `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/combine-fragments`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ slot }),
+      },
+    );
+
+    if (!res.ok) return null;
+
+    const { component, fragmentsRemaining } = await res.json() as {
+      component: ShipComponent;
+      fragmentsRemaining: number;
+    };
+
     set(state => ({
       ownedComponents: [...state.ownedComponents, component],
       fragmentCounts: { ...state.fragmentCounts, [slot]: fragmentsRemaining },
