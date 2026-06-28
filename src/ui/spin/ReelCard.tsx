@@ -13,6 +13,7 @@ type Props = {
 
 export function ReelCard({ item, isCenter }: Props) {
   const style = TIER_STYLES[item.tier];
+  // eslint-disable-next-line react-hooks/refs -- Animated.Value is a stable imperative object, not React state
   const glowOpacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {

@@ -29,6 +29,7 @@ export const SpinReel = forwardRef<SpinReelHandle, Props>(function SpinReel(
 
   useImperativeHandle(ref, () => ({
     start(isFakeout, onDone) {
+      translateX.stopAnimation();
       translateX.setValue(0);
 
       // Phase 1: fast scroll to midpoint

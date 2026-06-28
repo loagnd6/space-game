@@ -8,11 +8,11 @@ import { buildReelData, spinResultToReelItem } from './reelData';
 import { SpinReel, SpinReelHandle } from './SpinReel';
 import { SpinResult } from './SpinResult';
 import { SpinButtons } from './SpinButtons';
-import { WINNER_INDEX } from './constants';
+import { WINNER_INDEX, REEL_TOTAL } from './constants';
 import type { ReelItem } from './reelData';
 import type { SpinType } from '@/src/game/spin/types';
 
-const PLACEHOLDER_ITEMS: ReelItem[] = Array.from({ length: 40 }, (_, i) => ({
+const PLACEHOLDER_ITEMS: ReelItem[] = Array.from({ length: REEL_TOTAL }, (_, i) => ({
   id: `placeholder-${i}`,
   tier: 'common',
   label: '?',
@@ -23,10 +23,15 @@ const PLACEHOLDER_ITEMS: ReelItem[] = Array.from({ length: 40 }, (_, i) => ({
 export function SpinScreen() {
   const { freeSpinAvailableAt, isSpinning, fetchSpinState, spin } = useSpinStore();
   const reelRef = useRef<SpinReelHandle>(null);
+  const isMountedRef = useRef(true);
   const [reelItems, setReelItems] = useState<ReelItem[]>(PLACEHOLDER_ITEMS);
   const [resultItem, setResultItem] = useState<ReelItem | null>(null);
   const [centerIndex, setCenterIndex] = useState(2);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     fetchSpinState();
@@ -43,6 +48,7 @@ export function SpinScreen() {
 
       const isFakeout = result.tier !== 'common';
       reelRef.current?.start(isFakeout, async () => {
+        if (!isMountedRef.current) return;
         setCenterIndex(WINNER_INDEX);
         setResultItem(spinResultToReelItem(result));
         await Haptics.notificationAsync(

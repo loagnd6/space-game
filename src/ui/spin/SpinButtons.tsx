@@ -26,10 +26,12 @@ export function SpinButtons({
   onTicketSpin,
 }: Props) {
   const [countdown, setCountdown] = useState('');
+  // eslint-disable-next-line react-hooks/purity -- Date.now() is needed to check if cooldown has passed
   const freeReady = !freeSpinAvailableAt || freeSpinAvailableAt.getTime() <= Date.now();
 
   useEffect(() => {
     if (freeReady || !freeSpinAvailableAt) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial tick so countdown is visible immediately
     setCountdown(formatCountdown(freeSpinAvailableAt));
     const id = setInterval(() => {
       setCountdown(formatCountdown(freeSpinAvailableAt));
@@ -64,10 +66,16 @@ export function SpinButtons({
         disabled={ticketDisabled}
         activeOpacity={0.75}
       >
-        <Text style={styles.btnLabel}>🎫 Use Ticket</Text>
-        <Text style={styles.ticketCount}>
-          {ticketCount > 0 ? `${ticketCount} left` : 'No tickets'}
-        </Text>
+        {isSpinning ? (
+          <ActivityIndicator color={COLORS.background} size="small" />
+        ) : (
+          <>
+            <Text style={styles.btnLabel}>🎫 Use Ticket</Text>
+            <Text style={styles.ticketCount}>
+              {ticketCount > 0 ? `${ticketCount} left` : 'No tickets'}
+            </Text>
+          </>
+        )}
       </TouchableOpacity>
     </View>
   );

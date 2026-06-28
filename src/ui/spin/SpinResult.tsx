@@ -7,6 +7,7 @@ import type { ReelItem } from './reelData';
 type Props = { item: ReelItem | null };
 
 export function SpinResult({ item }: Props) {
+  // eslint-disable-next-line react-hooks/refs -- Animated.Value is a stable imperative object, not React state
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
