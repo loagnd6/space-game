@@ -31,7 +31,19 @@ export const useShipStore = create<ShipStore>((set, get) => ({
     const fragmentCounts: Record<ComponentSlot, number> = { hull: 0, weapons: 0, shields: 0, engine: 0 };
     fragments?.forEach(f => { fragmentCounts[f.slot_type as ComponentSlot] = f.count; });
 
-    set({ ownedComponents: components ?? [], fragmentCounts });
+    const owned = components ?? [];
+    const slots: ComponentSlot[] = ['hull', 'weapons', 'shields', 'engine'];
+    const equippedComponents: Record<ComponentSlot, ShipComponent | null> = {
+      hull: null, weapons: null, shields: null, engine: null,
+    };
+    if (ship) {
+      slots.forEach(slot => {
+        const id = (ship as Record<string, unknown>)[`${slot}_component_id`] as string | null;
+        equippedComponents[slot] = owned.find(c => c.id === id) ?? null;
+      });
+    }
+
+    set({ ownedComponents: owned, fragmentCounts, equippedComponents });
   },
 
   equipComponent: async (component: ShipComponent) => {
