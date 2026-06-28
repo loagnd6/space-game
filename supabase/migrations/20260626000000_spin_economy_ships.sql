@@ -85,6 +85,8 @@ CREATE POLICY "Anyone can view listings" ON marketplace_listings
   FOR SELECT USING (TRUE);
 CREATE POLICY "Sellers create own listings" ON marketplace_listings
   FOR INSERT WITH CHECK (auth.uid() = seller_id);
+CREATE POLICY "Service role deletes listings" ON marketplace_listings
+  FOR DELETE USING (auth.role() = 'service_role');
 
 -- ============================================================
 -- Ship Components
