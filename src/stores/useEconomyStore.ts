@@ -1,8 +1,32 @@
 import { create } from 'zustand';
 import type { MarketplaceListing } from '@/src/game/economy/types';
 import { validateListing } from '@/src/game/economy';
-import type { InventoryItem } from '@/src/types/inventory';
+import type { InventoryItem, ItemType } from '@/src/types/inventory';
 import { supabase } from '@/src/services/supabase';
+
+function mapListing(row: Record<string, unknown>): MarketplaceListing {
+  return {
+    id: row.id as string,
+    sellerId: row.seller_id as string,
+    itemType: row.item_type as string,
+    itemData: row.item_data as Record<string, unknown>,
+    priceLumens: row.price_lumens as number,
+    listedAt: row.listed_at as string,
+    expiresAt: row.expires_at as string,
+  };
+}
+
+function mapInventoryItem(row: Record<string, unknown>): InventoryItem {
+  return {
+    id: row.id as string,
+    playerId: row.player_id as string,
+    itemType: row.item_type as ItemType,
+    itemData: row.item_data as Record<string, unknown>,
+    quantity: row.quantity as number,
+    isSoulBound: row.is_soul_bound as boolean,
+    acquiredAt: row.acquired_at as string,
+  };
+}
 
 interface EconomyStore {
   lumenBalance: number;
@@ -34,7 +58,7 @@ export const useEconomyStore = create<EconomyStore>((set, get) => ({
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     const { data } = await supabase.from('marketplace_listings').select('*').eq('seller_id', session.user.id);
-    set({ activeListings: (data as MarketplaceListing[]) ?? [] });
+    set({ activeListings: (data ?? []).map(row => mapListing(row as Record<string, unknown>)) });
   },
 
   fetchMarketplace: async () => {
@@ -44,7 +68,7 @@ export const useEconomyStore = create<EconomyStore>((set, get) => ({
       .gt('expires_at', new Date().toISOString())
       .order('listed_at', { ascending: false })
       .limit(50);
-    set({ marketplaceListings: (data as MarketplaceListing[]) ?? [] });
+    set({ marketplaceListings: (data ?? []).map(row => mapListing(row as Record<string, unknown>)) });
   },
 
   listItem: async (item: InventoryItem, priceLumens: number) => {
@@ -96,6 +120,6 @@ export const useEconomyStore = create<EconomyStore>((set, get) => ({
       .eq('player_id', session.user.id)
       .order('acquired_at', { ascending: false });
     if (error) throw new Error(error.message);
-    set({ inventory: (data as InventoryItem[]) ?? [] });
+    set({ inventory: (data ?? []).map(row => mapInventoryItem(row as Record<string, unknown>)) });
   },
 }));
