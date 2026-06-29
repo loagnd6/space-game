@@ -13,12 +13,15 @@ interface EconomyStore {
   fetchMarketplace: () => Promise<void>;
   listItem: (item: InventoryItem, priceLumens: number) => Promise<{ error?: string }>;
   buyListing: (listingId: string) => Promise<{ error?: string }>;
+  inventory: InventoryItem[];
+  fetchInventory: () => Promise<void>;
 }
 
 export const useEconomyStore = create<EconomyStore>((set, get) => ({
   lumenBalance: 0,
   activeListings: [],
   marketplaceListings: [],
+  inventory: [],
 
   fetchBalance: async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -82,5 +85,17 @@ export const useEconomyStore = create<EconomyStore>((set, get) => ({
     }
     await Promise.all([get().fetchBalance(), get().fetchMarketplace()]);
     return {};
+  },
+
+  fetchInventory: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data, error } = await supabase
+      .from('player_inventory')
+      .select('*')
+      .eq('player_id', session.user.id)
+      .order('acquired_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    set({ inventory: (data as InventoryItem[]) ?? [] });
   },
 }));
