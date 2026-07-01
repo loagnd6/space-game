@@ -45,8 +45,8 @@ describe('calculateTravelTime', () => {
       .toBe(EXPLORATION.TRAVEL_TIME_MAX_MS);
   });
   it('grows with distance within the clamped range', () => {
-    const near = calculateTravelTime({ x: 0, y: 0 }, { x: 200, y: 0 });
-    const mid  = calculateTravelTime({ x: 0, y: 0 }, { x: 1000, y: 0 });
+    const near = calculateTravelTime({ x: 0, y: 0 }, { x: 1100, y: 0 });
+    const mid  = calculateTravelTime({ x: 0, y: 0 }, { x: 2000, y: 0 });
     expect(mid).toBeGreaterThan(near);
   });
 });
