@@ -9,6 +9,7 @@ import type { StarSystem } from '@/src/types';
 import type { FleetMission, DiscoveryResult } from '@/src/types/exploration';
 import { MissionTracker } from './MissionTracker';
 import { SystemSheet } from './SystemSheet';
+import { DiscoveryCard } from './DiscoveryCard';
 
 const MAP = EXPLORATION.MAP_SIZE;
 const LANE_MAX = EXPLORATION.TRAVEL_LANE_MAX_DIST;
@@ -29,6 +30,9 @@ function nodeColor(
 export function StarMapScreen() {
   const { starSystems, activeMissions, discoveries, checkArrivals } = useExplorationStore();
   const [selected, setSelected] = useState<StarSystem | null>(null);
+  const [pendingResult, setPendingResult] = useState<
+    { result: DiscoveryResult; systemName: string } | null
+  >(null);
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
@@ -122,7 +126,22 @@ export function StarMapScreen() {
       <MissionTracker onSelectSystem={sys => setSelected(sys)} />
 
       {selected && (
-        <SystemSheet system={selected} onClose={() => setSelected(null)} />
+        <SystemSheet
+          system={selected}
+          onClose={() => setSelected(null)}
+          onCollect={(result, systemName) => {
+            setSelected(null);
+            setPendingResult({ result, systemName });
+          }}
+        />
+      )}
+
+      {pendingResult && (
+        <DiscoveryCard
+          result={pendingResult.result}
+          systemName={pendingResult.systemName}
+          onClose={() => setPendingResult(null)}
+        />
       )}
     </View>
   );

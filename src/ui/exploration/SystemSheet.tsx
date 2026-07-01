@@ -13,6 +13,7 @@ import type { FleetMission } from '@/src/types/exploration';
 interface Props {
   system: StarSystem;
   onClose(): void;
+  onCollect(result: import('@/src/types/exploration').DiscoveryResult, systemName: string): void;
 }
 
 function formatDuration(ms: number): string {
@@ -25,8 +26,8 @@ function formatEta(arrivesAt: number): string {
   return `Returns in ${formatDuration(remaining)}`;
 }
 
-export function SystemSheet({ system, onClose }: Props) {
-  const { starSystems, activeMissions, fuel, dispatchFleet } = useExplorationStore();
+export function SystemSheet({ system, onClose, onCollect }: Props) {
+  const { starSystems, activeMissions, fuel, dispatchFleet, collectMission } = useExplorationStore();
   const home = starSystems.find(s => s.id === 'sol-home');
 
   const fuelCost = home ? calculateFuelCost(home.position, system.position) : 0;
@@ -36,9 +37,21 @@ export function SystemSheet({ system, onClose }: Props) {
     m => m.systemId === system.id && (m.status === 'in_transit' || m.status === 'arrived')
   );
 
+  const arrivedMission = activeMissions.find(
+    m => m.systemId === system.id && m.status === 'arrived'
+  );
+
   const handleDispatch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     dispatchFleet(system.id);
+    onClose();
+  };
+
+  const handleCollect = () => {
+    collectMission(arrivedMission!.id);
+    const updated = useExplorationStore.getState().discoveries;
+    const result = updated.find(d => d.missionId === arrivedMission!.id);
+    if (result) onCollect(result, system.name);
     onClose();
   };
 
@@ -103,13 +116,19 @@ export function SystemSheet({ system, onClose }: Props) {
           </ScrollView>
 
           {/* Action button */}
-          <Pressable
-            style={[styles.dispatchBtn, buttonDisabled && styles.dispatchBtnDisabled]}
-            onPress={handleDispatch}
-            disabled={buttonDisabled}
-          >
-            <Text style={styles.dispatchBtnText}>{buttonLabel}</Text>
-          </Pressable>
+          {arrivedMission ? (
+            <Pressable style={styles.dispatchBtn} onPress={handleCollect}>
+              <Text style={styles.dispatchBtnText}>Collect Fleet →</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.dispatchBtn, buttonDisabled && styles.dispatchBtnDisabled]}
+              onPress={handleDispatch}
+              disabled={buttonDisabled}
+            >
+              <Text style={styles.dispatchBtnText}>{buttonLabel}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </Modal>
