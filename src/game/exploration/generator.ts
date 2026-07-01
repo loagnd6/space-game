@@ -31,7 +31,7 @@ function makePlanets(rng: SeededRNG, count: number, systemId: string): Planet[] 
   }));
 }
 
-export function generateStarSystems(seed: number, count = EXPLORATION.SYSTEM_COUNT): StarSystem[] {
+export function generateStarSystems(seed: number, count: number = EXPLORATION.SYSTEM_COUNT): StarSystem[] {
   const rng = new SeededRNG(seed);
   const center = EXPLORATION.MAP_SIZE / 2;
 
