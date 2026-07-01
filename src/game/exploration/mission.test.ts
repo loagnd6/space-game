@@ -68,6 +68,11 @@ describe('resolveMission', () => {
     expect(r1.resourcesGained).toEqual(r2.resourcesGained);
     expect(r1.fragmentDrop).toEqual(r2.fragmentDrop);
   });
+  it('throws a descriptive error when the mission references a system that no longer exists', () => {
+    const orphanMission: FleetMission = { ...mission, systemId: 'ghost-system' };
+    expect(() => resolveMission(orphanMission, [home, target], new SeededRNG(1)))
+      .toThrow(/ghost-system/);
+  });
 });
 
 describe('hashUUID', () => {

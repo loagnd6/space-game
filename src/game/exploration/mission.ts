@@ -36,7 +36,10 @@ export function resolveMission(
   systems: StarSystem[],
   rng: SeededRNG,
 ): DiscoveryResult {
-  const system = systems.find(s => s.id === mission.systemId)!;
+  const system = systems.find(s => s.id === mission.systemId);
+  if (!system) {
+    throw new Error(`resolveMission: no system found with id ${mission.systemId} for mission ${mission.id}`);
+  }
   const avgRichness =
     system.planets.reduce((sum, p) => sum + p.resourceRichness, 0) /
     Math.max(1, system.planets.length);

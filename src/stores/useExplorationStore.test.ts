@@ -8,9 +8,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('@/src/services/notifications', () => ({
   scheduleArrivalNotification: jest.fn(() => Promise.resolve('notif-1')),
+  cancelNotification: jest.fn(() => Promise.resolve()),
 }));
 
 import { useExplorationStore } from './useExplorationStore';
+import { cancelNotification } from '@/src/services/notifications';
 import type { StarSystem } from '@/src/types';
 
 const PLAYER_UUID = 'a1b2c3d4-0000-0000-0000-000000000000';
@@ -124,5 +126,33 @@ describe('collectMission', () => {
     });
     act(() => { useExplorationStore.getState().collectMission('m4'); });
     expect(useExplorationStore.getState().discoveries).toHaveLength(0);
+  });
+
+  it('cancels the scheduled arrival notification', () => {
+    useExplorationStore.setState({
+      starSystems: [solHome, vegaSys],
+      activeMissions: [{
+        id: 'm5', systemId: 'sys-0', departedAt: 0, arrivesAt: 0, fuelCost: 3,
+        status: 'arrived', notificationId: 'notif-abc',
+      }],
+      fuel: 10,
+    });
+    act(() => { useExplorationStore.getState().collectMission('m5'); });
+    expect(cancelNotification).toHaveBeenCalledWith('notif-abc');
+  });
+
+  it('does not mutate state when resolveMission throws for a missing system', () => {
+    useExplorationStore.setState({
+      starSystems: [solHome], // vegaSys deliberately omitted
+      activeMissions: [{
+        id: 'm6', systemId: 'sys-0', departedAt: 0, arrivesAt: 0, fuelCost: 3, status: 'arrived',
+      }],
+      fuel: 10,
+    });
+    act(() => { useExplorationStore.getState().collectMission('m6'); });
+    const { activeMissions, discoveries, fuel } = useExplorationStore.getState();
+    expect(activeMissions[0]!.status).toBe('arrived');
+    expect(discoveries).toHaveLength(0);
+    expect(fuel).toBe(10);
   });
 });

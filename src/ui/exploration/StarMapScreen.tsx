@@ -28,7 +28,7 @@ function nodeColor(
 }
 
 export function StarMapScreen() {
-  const { starSystems, activeMissions, discoveries, checkArrivals } = useExplorationStore();
+  const { starSystems, activeMissions, discoveries, checkArrivals, fuel } = useExplorationStore();
   const [selected, setSelected] = useState<StarSystem | null>(null);
   const [pendingResult, setPendingResult] = useState<
     { result: DiscoveryResult; systemName: string } | null
@@ -71,7 +71,7 @@ export function StarMapScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Star Map</Text>
-        <Text style={styles.fuelLabel}>⛽ {useExplorationStore.getState().fuel} fuel</Text>
+        <Text style={styles.fuelLabel}>⛽ {fuel} fuel</Text>
       </View>
 
       {/* Map */}

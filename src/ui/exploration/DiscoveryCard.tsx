@@ -1,6 +1,5 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useExplorationStore } from '@/src/stores/useExplorationStore';
 import { TIER_STYLES } from '@/src/ui/spin/tierStyles';
 import { COLORS, FONT, RADIUS, SPACING } from '@/src/constants/theme';
 import type { DiscoveryResult } from '@/src/types/exploration';
@@ -22,17 +21,10 @@ function TierBadge({ tier }: { tier: ComponentTier }) {
 }
 
 export function DiscoveryCard({ result, systemName, onClose }: Props) {
-  const { collectMission } = useExplorationStore();
-
-  const handleCollect = () => {
-    collectMission(result.missionId);
-    onClose();
-  };
-
   const { credits, fuel, research } = result.resourcesGained;
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={handleCollect}>
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <Text style={styles.title}>Fleet Returned</Text>
@@ -63,7 +55,7 @@ export function DiscoveryCard({ result, systemName, onClose }: Props) {
             </>
           )}
 
-          <Pressable style={styles.collectBtn} onPress={handleCollect}>
+          <Pressable style={styles.collectBtn} onPress={onClose}>
             <Text style={styles.collectBtnText}>Collect</Text>
           </Pressable>
         </View>

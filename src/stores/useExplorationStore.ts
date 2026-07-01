@@ -6,7 +6,7 @@ import { SeededRNG } from '@/src/game/rng';
 import type { StarSystem, UUID } from '@/src/types';
 import type { FleetMission, DiscoveryResult, MissionStatus } from '@/src/types/exploration';
 import { STARTING_RESOURCES } from '@/src/constants/game';
-import { scheduleArrivalNotification } from '@/src/services/notifications';
+import { scheduleArrivalNotification, cancelNotification } from '@/src/services/notifications';
 
 function uuidToSeed(uuid: string): number {
   const hex = uuid.replace(/-/g, '').slice(0, 8);
@@ -87,7 +87,16 @@ export const useExplorationStore = create<ExplorationState>()(
         const mission = activeMissions.find(m => m.id === missionId);
         if (!mission || mission.status !== 'arrived') return;
 
-        const result = resolveMission(mission, starSystems, new SeededRNG(hashUUID(missionId)));
+        let result: DiscoveryResult;
+        try {
+          result = resolveMission(mission, starSystems, new SeededRNG(hashUUID(missionId)));
+        } catch {
+          return;
+        }
+
+        if (mission.notificationId) {
+          cancelNotification(mission.notificationId);
+        }
 
         set(s => ({
           fuel: s.fuel + result.resourcesGained.fuel,
