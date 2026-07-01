@@ -1,5 +1,7 @@
 /** Game-balance constants. Never put magic numbers in game logic — reference these. */
 
+import type { ComponentTier } from '@/src/game/ships/types';
+
 export const MAX_FLEET_SIZE = 6;
 export const BASE_DAMAGE_MULTIPLIER = 1.0;
 
@@ -29,8 +31,6 @@ export const FRAGMENT_COMBINE_COUNT = 3; // 3 fragments → 1 Uncommon component
 export const SPIN_TICKET_RAID_DROP_CHANCE = 0.10; // 10% on raid win
 
 // --- Ship Components ---
-import type { ComponentTier } from '@/src/game/ships/types';
-
 export const COMPONENT_STAT_MULTIPLIERS: Record<ComponentTier, number> = {
   common:     1.0,
   uncommon:   1.3,
@@ -61,4 +61,18 @@ export const LUMEN_REWARDS = {
   MISSION_MAX:          100,
   SEASONAL_BONUS_MIN:   500,
   SEASONAL_BONUS_MAX:  2000,
+} as const;
+
+// --- Exploration ---
+export const EXPLORATION = {
+  MAP_SIZE:              2000,
+  SYSTEM_COUNT:          20,
+  MIN_SYSTEM_SPACING:    150,
+  TRAVEL_LANE_MAX_DIST:  400,
+  FUEL_COST_DIVISOR:     100,
+  TRAVEL_TIME_SCALE:     300,      // ms per pt of distance
+  TRAVEL_TIME_MIN_MS:    5  * 60_000,
+  TRAVEL_TIME_MAX_MS:    20 * 60_000,
+  FRAGMENT_BASE_CHANCE:  0.08,
+  FRAGMENT_DANGER_BONUS: 0.02,
 } as const;

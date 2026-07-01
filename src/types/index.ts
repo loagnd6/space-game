@@ -20,6 +20,7 @@ export interface StarSystem {
   name: string;
   position: Vec2;
   planets: Planet[];
+  dangerLevel: 1 | 2 | 3 | 4 | 5;
 }
 
 export interface Ship {
