@@ -7,6 +7,7 @@ import { EXPLORATION } from '@/src/constants/game';
 import { COLORS, FONT, SPACING } from '@/src/constants/theme';
 import type { StarSystem } from '@/src/types';
 import type { FleetMission, DiscoveryResult } from '@/src/types/exploration';
+import { MissionTracker } from './MissionTracker';
 import { SystemSheet } from './SystemSheet';
 
 const MAP = EXPLORATION.MAP_SIZE;
@@ -118,7 +119,7 @@ export function StarMapScreen() {
         ))}
       </ScrollView>
 
-      {/* Placeholder replaced by MissionTracker in Task 8 */}
+      <MissionTracker onSelectSystem={sys => setSelected(sys)} />
 
       {selected && (
         <SystemSheet system={selected} onClose={() => setSelected(null)} />
