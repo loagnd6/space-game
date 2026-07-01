@@ -7,6 +7,7 @@ import { EXPLORATION } from '@/src/constants/game';
 import { COLORS, FONT, SPACING } from '@/src/constants/theme';
 import type { StarSystem } from '@/src/types';
 import type { FleetMission, DiscoveryResult } from '@/src/types/exploration';
+import { SystemSheet } from './SystemSheet';
 
 const MAP = EXPLORATION.MAP_SIZE;
 const LANE_MAX = EXPLORATION.TRAVEL_LANE_MAX_DIST;
@@ -119,14 +120,8 @@ export function StarMapScreen() {
 
       {/* Placeholder replaced by MissionTracker in Task 8 */}
 
-      {/* Placeholder replaced by SystemSheet in Task 7 */}
       {selected && (
-        <View style={styles.sheetPlaceholder}>
-          <Text style={styles.sheetText}>{selected.name} (danger {selected.dangerLevel}★)</Text>
-          <Pressable onPress={() => setSelected(null)} style={styles.closeBtn}>
-            <Text style={styles.closeBtnText}>Close</Text>
-          </Pressable>
-        </View>
+        <SystemSheet system={selected} onClose={() => setSelected(null)} />
       )}
     </View>
   );
@@ -142,9 +137,4 @@ const styles = StyleSheet.create({
   scroll:           { flex: 1 },
   mapContainer:     { width: MAP, height: MAP },
   nodeTap:          { position: 'absolute', width: NODE_R * 4, height: NODE_R * 4 },
-  sheetPlaceholder: { position: 'absolute', bottom: 0, left: 0, right: 0,
-                      backgroundColor: COLORS.surface, padding: SPACING.lg, gap: SPACING.sm },
-  sheetText:        { color: COLORS.text, fontSize: FONT.sm },
-  closeBtn:         { alignSelf: 'flex-start' },
-  closeBtnText:     { color: COLORS.primary, fontSize: FONT.sm },
 });
