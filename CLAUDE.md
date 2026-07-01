@@ -4,6 +4,8 @@
 A React Native / Expo mobile game featuring deep space exploration, planet discovery,
 resource management, and real-time fleet combat.
 
+> **Before every task:** read `docs/overview.md` for the full file map, data flow, and system descriptions. It is the ground truth for what exists and how things connect.
+
 ## Tech Stack
 - **Framework**: React Native + Expo SDK 56
 - **Language**: TypeScript (strict mode)
@@ -19,25 +21,67 @@ resource management, and real-time fleet combat.
 
 | System | Status | Location |
 |--------|--------|----------|
-| Star Map / Navigation | 🔴 Not started | `src/game/exploration/` |
-| Planet Discovery | 🔴 Not started | `src/game/exploration/` |
-| Battle Engine | 🔴 Not started | `src/game/battle/` |
-| Fleet Management | 🔴 Not started | `src/game/fleet/` |
+| Gacha Spin | 🟢 Complete | `src/game/spin/`, `src/ui/spin/`, `supabase/functions/spin/` |
+| Ship Loadout | 🟢 Complete | `src/ui/fleet/LoadoutScreen.tsx`, `useShipStore` |
+| Combat Engine | 🟡 Logic done, no UI | `src/game/ships/CombatEngine.ts` |
+| Marketplace / Auction House | 🟢 Complete | `src/ui/fleet/MarketScreen.tsx`, `supabase/functions/marketplace-buy/` |
+| Fragment Combining | 🟢 Complete | `src/game/ships/FragmentCombiner.ts`, `supabase/functions/combine-fragments/` |
+| Star Map / Planet Discovery | 🟡 Built, not wired up + 4 known bugs (see Session Sync) | `src/game/exploration/`, `src/stores/useExplorationStore.ts`, `src/ui/exploration/` |
 | Resource System | 🔴 Not started | `src/game/resources/` |
 | Tech Tree | 🔴 Not started | `src/game/progression/` |
-| UI Layer | 🔴 Not started | `src/ui/` |
-| Supabase Integration | 🔴 Not started | `src/services/` |
 
 ---
 
 ## Session Sync (update before each session)
 ```
-Last worked on : [FILL IN]
-Current feature: [FILL IN]
-Known bugs     : [FILL IN]
-Next task      : [FILL IN]
-Blockers       : [FILL IN]
+Last worked on : Fixed the 4 known bugs from the prior code review (systematic-debugging
+                  process: confirmed each against current code, added failing tests for
+                  the two logic-layer bugs, then fixed):
+                  1. DiscoveryCard no longer calls collectMission — SystemSheet is now
+                     the sole owner of the collect action; DiscoveryCard's button just
+                     calls onClose().
+                  2. StarMapScreen destructures `fuel` from the reactive useExplorationStore()
+                     selector instead of a one-time getState() snapshot.
+                  3. mission.ts resolveMission throws a descriptive error on a missing
+                     system instead of an unguarded `!` assertion; useExplorationStore.
+                     collectMission wraps the call in try/catch and no-ops on failure.
+                  4. useExplorationStore.collectMission now calls cancelNotification()
+                     for mission.notificationId before mutating state.
+                  Added tests: mission.test.ts (throws on missing system), useExplorationStore.test.ts
+                  (cancels notification, no-ops on resolveMission throw). Full suite: 85/86
+                  pass (1 pre-existing unrelated flaky failure in marketStyles.test.ts —
+                  DST/rounding issue in formatTimeLeft, confirmed present on main before
+                  these changes too). Lint: 0 errors. tsc: clean.
+
+Also completed Task 10 of docs/superpowers/plans/2026-06-29-star-map-planet-discovery.md:
+created app/(tabs)/fleet/explore.tsx (calls useExplorationStore.initMap with the
+Supabase session's playerUUID, renders StarMapScreen) and added a "Star Map →"
+button to FleetScreen.tsx below Auction House. Lint/tsc/Jest all clean. Manual
+device smoke test (plan's Task 10 Step 4 checklist) not yet run — dev server was
+started but user deferred hands-on testing to next session.
+
+Current feature : Star Map & Planet Discovery (exploration system). All 10 plan tasks
+                  code-complete and tested. All 4 known bugs fixed.
+
+Known bugs      : None outstanding from the last review.
+
+Next task       : Manual device smoke test per the plan's Task 10 Step 4 checklist
+                  (open Fleet tab → Star Map → dispatch → wait → collect), via Expo Go
+                  on a phone (no native modules requiring a dev-client build) or an
+                  Android Studio emulator. Note: docs/overview.md flags that the
+                  top-level `(tabs)` Star Map tab is a separate, still-untouched
+                  placeholder — the real system lives under /fleet/explore. After
+                  smoke test passes, the plan is fully done — decide next system
+                  (Resource System or Tech Tree are both 🔴 Not started).
+
+Blockers        : None.
 ```
+
+Minor/deferred findings from the same review (not blocking, low priority): redundant
+duplicate `.find()` calls in SystemSheet.tsx, an inline `import('...')` type instead of
+a top-level import, a couple of stylistically-inconsistent `!` assertions, unmemoized
+O(n²) lane computation in StarMapScreen (fine at 20 systems), `EXPLORATION.TRAVEL_LANE_MAX_DIST`
+only enforced visually not in dispatch logic, no AsyncStorage persist versioning.
 
 ---
 
