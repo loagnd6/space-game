@@ -35,6 +35,9 @@ export function FleetScreen() {
         <Pressable style={styles.marketBtn} onPress={() => router.push('/fleet/market')}>
           <Text style={styles.marketBtnText}>Auction House →</Text>
         </Pressable>
+        <Pressable style={styles.marketBtn} onPress={() => router.push('/fleet/explore')}>
+          <Text style={styles.marketBtnText}>Star Map →</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
