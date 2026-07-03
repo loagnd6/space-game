@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Canvas, Circle, Line, Path, Skia, vec } from '@shopify/react-native-skia';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useExplorationStore } from '@/src/stores/useExplorationStore';
 import { EXPLORATION } from '@/src/constants/game';
 import { COLORS, FONT, SPACING } from '@/src/constants/theme';
@@ -14,6 +16,8 @@ import { DiscoveryCard } from './DiscoveryCard';
 const MAP = EXPLORATION.MAP_SIZE;
 const LANE_MAX = EXPLORATION.TRAVEL_LANE_MAX_DIST;
 const NODE_R = 12;
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 2;
 
 function nodeColor(
   systemId: string,
@@ -27,23 +31,80 @@ function nodeColor(
   return '#6B7280';
 }
 
+function clamp(value: number, min: number, max: number): number {
+  'worklet';
+  return Math.min(max, Math.max(min, value));
+}
+
 export function StarMapScreen() {
   const { starSystems, activeMissions, discoveries, checkArrivals, fuel } = useExplorationStore();
   const [selected, setSelected] = useState<StarSystem | null>(null);
   const [pendingResult, setPendingResult] = useState<
     { result: DiscoveryResult; systemName: string } | null
   >(null);
-  const scrollRef = useRef<ScrollView>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const insets = useSafeAreaInsets();
+
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedScale = useSharedValue(1);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+  const centered = useSharedValue(false);
 
   useEffect(() => {
     checkArrivals();
-    // Center the scroll view on Sol (1000, 1000) after first layout
-    const timer = setTimeout(() => {
-      scrollRef.current?.scrollTo({ x: 700, y: 700, animated: false });
-    }, 100);
-    return () => clearTimeout(timer);
   }, [checkArrivals]);
+
+  // Center on Sol (MAP/2, MAP/2) once the viewport has been measured.
+  useEffect(() => {
+    if (viewport.width === 0 || viewport.height === 0 || centered.value) return;
+    translateX.value = viewport.width / 2 - MAP / 2;
+    translateY.value = viewport.height / 2 - MAP / 2;
+    savedTranslateX.value = translateX.value;
+    savedTranslateY.value = translateY.value;
+    centered.value = true;
+    // Shared values are mutable refs, not reactive state — intentionally omitted from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewport.width, viewport.height]);
+
+  // Reanimated SharedValues are intentionally mutable refs (`.value = x`), which the
+  // React Compiler's immutability check doesn't recognize as safe once the same ref is
+  // read inside the centering useEffect above — false positive, not a real bug.
+  /* eslint-disable react-hooks/immutability */
+  const panGesture = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
+    .onStart(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    })
+    .onUpdate(e => {
+      const minX = Math.min(0, viewport.width - MAP * scale.value);
+      const minY = Math.min(0, viewport.height - MAP * scale.value);
+      translateX.value = clamp(savedTranslateX.value + e.translationX, minX, 0);
+      translateY.value = clamp(savedTranslateY.value + e.translationY, minY, 0);
+    });
+
+  const pinchGesture = Gesture.Pinch()
+    .onStart(() => {
+      savedScale.value = scale.value;
+    })
+    .onUpdate(e => {
+      scale.value = clamp(savedScale.value * e.scale, MIN_SCALE, MAX_SCALE);
+    });
+  /* eslint-enable react-hooks/immutability */
+
+  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
+
+  const mapAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
 
   // Build travel lanes between nearby systems
   const lanes: [StarSystem, StarSystem][] = [];
@@ -67,7 +128,7 @@ export function StarMapScreen() {
     : null;
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Star Map</Text>
@@ -75,53 +136,51 @@ export function StarMapScreen() {
       </View>
 
       {/* Map */}
-      <ScrollView
-        ref={scrollRef}
+      <View
         style={styles.scroll}
-        contentContainerStyle={styles.mapContainer}
-        minimumZoomScale={0.3}
-        maximumZoomScale={2}
-        pinchGestureEnabled
-        showsHorizontalScrollIndicator={false}
-        showsVerticalScrollIndicator={false}
+        onLayout={e => setViewport({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
       >
-        {/* Skia canvas: lanes + nodes */}
-        <Canvas style={StyleSheet.absoluteFill}>
-          {lanes.map(([a, b], i) => (
-            <Line
-              key={`lane-${i}`}
-              p1={vec(a.position.x, a.position.y)}
-              p2={vec(b.position.x, b.position.y)}
-              color="#374151"
-              strokeWidth={1}
-            />
-          ))}
-          {starSystems.map(sys => (
-            <Circle
-              key={sys.id}
-              cx={sys.position.x}
-              cy={sys.position.y}
-              r={NODE_R}
-              color={nodeColor(sys.id, activeMissions, discoveries)}
-            />
-          ))}
-          {ringPath && (
-            <Path path={ringPath} color="white" style="stroke" strokeWidth={2} />
-          )}
-        </Canvas>
+        <GestureDetector gesture={composedGesture}>
+          <Animated.View style={[styles.mapContainer, mapAnimatedStyle]}>
+            {/* Skia canvas: lanes + nodes */}
+            <Canvas style={StyleSheet.absoluteFill}>
+              {lanes.map(([a, b], i) => (
+                <Line
+                  key={`lane-${i}`}
+                  p1={vec(a.position.x, a.position.y)}
+                  p2={vec(b.position.x, b.position.y)}
+                  color="#374151"
+                  strokeWidth={1}
+                />
+              ))}
+              {starSystems.map(sys => (
+                <Circle
+                  key={sys.id}
+                  cx={sys.position.x}
+                  cy={sys.position.y}
+                  r={NODE_R}
+                  color={nodeColor(sys.id, activeMissions, discoveries)}
+                />
+              ))}
+              {ringPath && (
+                <Path path={ringPath} color="white" style="stroke" strokeWidth={2} />
+              )}
+            </Canvas>
 
-        {/* Invisible tap targets over each node */}
-        {starSystems.map(sys => (
-          <Pressable
-            key={`tap-${sys.id}`}
-            style={[
-              styles.nodeTap,
-              { left: sys.position.x - NODE_R * 2, top: sys.position.y - NODE_R * 2 },
-            ]}
-            onPress={() => setSelected(sys)}
-          />
-        ))}
-      </ScrollView>
+            {/* Invisible tap targets over each node */}
+            {starSystems.map(sys => (
+              <Pressable
+                key={`tap-${sys.id}`}
+                style={[
+                  styles.nodeTap,
+                  { left: sys.position.x - NODE_R * 2, top: sys.position.y - NODE_R * 2 },
+                ]}
+                onPress={() => setSelected(sys)}
+              />
+            ))}
+          </Animated.View>
+        </GestureDetector>
+      </View>
 
       <MissionTracker onSelectSystem={sys => setSelected(sys)} />
 
@@ -154,7 +213,7 @@ const styles = StyleSheet.create({
                       backgroundColor: COLORS.surface },
   headerTitle:      { color: COLORS.text, fontSize: FONT.md, fontWeight: '700' },
   fuelLabel:        { color: COLORS.accent, fontSize: FONT.sm },
-  scroll:           { flex: 1 },
-  mapContainer:     { width: MAP, height: MAP },
+  scroll:           { flex: 1, overflow: 'hidden' },
+  mapContainer:     { position: 'absolute', width: MAP, height: MAP },
   nodeTap:          { position: 'absolute', width: NODE_R * 4, height: NODE_R * 4 },
 });

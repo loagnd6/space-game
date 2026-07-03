@@ -1,14 +1,17 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
+import { supabase } from '@/src/services/supabase';
+import { useExplorationStore } from '@/src/stores/useExplorationStore';
+import { StarMapScreen } from '@/src/ui/exploration';
 
-import { Screen } from '@/src/ui/Screen';
+export default function StarMapRoute() {
+  const initMap = useExplorationStore(s => s.initMap);
 
-export default function StarMapScreen() {
-  return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <Screen
-        title="Star Map"
-        subtitle="Chart a course. Discover new systems. Find what's worth fighting for."
-      />
-    </SafeAreaView>
-  );
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const uuid = data.session?.user.id;
+      if (uuid) initMap(uuid);
+    });
+  }, [initMap]);
+
+  return <StarMapScreen />;
 }
