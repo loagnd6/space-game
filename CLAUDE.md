@@ -26,7 +26,7 @@ resource management, and real-time fleet combat.
 | Combat Engine | 🟡 Logic done, no UI | `src/game/ships/CombatEngine.ts` |
 | Marketplace / Auction House | 🟢 Complete | `src/ui/fleet/MarketScreen.tsx`, `supabase/functions/marketplace-buy/` |
 | Fragment Combining | 🟢 Complete | `src/game/ships/FragmentCombiner.ts`, `supabase/functions/combine-fragments/` |
-| Star Map / Planet Discovery | 🟡 Built, not wired up + 4 known bugs (see Session Sync) | `src/game/exploration/`, `src/stores/useExplorationStore.ts`, `src/ui/exploration/` |
+| Star Map / Planet Discovery | 🟢 Complete — top-level tab, verified live on emulator | `src/game/exploration/`, `src/stores/useExplorationStore.ts`, `src/ui/exploration/` |
 | Resource System | 🔴 Not started | `src/game/resources/` |
 | Tech Tree | 🔴 Not started | `src/game/progression/` |
 
@@ -34,45 +34,91 @@ resource management, and real-time fleet combat.
 
 ## Session Sync (update before each session)
 ```
-Last worked on : Fixed the 4 known bugs from the prior code review (systematic-debugging
-                  process: confirmed each against current code, added failing tests for
-                  the two logic-layer bugs, then fixed):
-                  1. DiscoveryCard no longer calls collectMission — SystemSheet is now
-                     the sole owner of the collect action; DiscoveryCard's button just
-                     calls onClose().
-                  2. StarMapScreen destructures `fuel` from the reactive useExplorationStore()
-                     selector instead of a one-time getState() snapshot.
-                  3. mission.ts resolveMission throws a descriptive error on a missing
-                     system instead of an unguarded `!` assertion; useExplorationStore.
-                     collectMission wraps the call in try/catch and no-ops on failure.
-                  4. useExplorationStore.collectMission now calls cancelNotification()
-                     for mission.notificationId before mutating state.
-                  Added tests: mission.test.ts (throws on missing system), useExplorationStore.test.ts
-                  (cancels notification, no-ops on resolveMission throw). Full suite: 85/86
-                  pass (1 pre-existing unrelated flaky failure in marketStyles.test.ts —
-                  DST/rounding issue in formatTimeLeft, confirmed present on main before
-                  these changes too). Lint: 0 errors. tsc: clean.
+Last worked on : Two rounds of live device testing on an Android Studio emulator
+                  (Pixel_9 AVD), fixing real bugs found via systematic-debugging (not
+                  guessed — root-caused by reading actual source/logs each time):
 
-Also completed Task 10 of docs/superpowers/plans/2026-06-29-star-map-planet-discovery.md:
-created app/(tabs)/fleet/explore.tsx (calls useExplorationStore.initMap with the
-Supabase session's playerUUID, renders StarMapScreen) and added a "Star Map →"
-button to FleetScreen.tsx below Auction House. Lint/tsc/Jest all clean. Manual
-device smoke test (plan's Task 10 Step 4 checklist) not yet run — dev server was
-started but user deferred hands-on testing to next session.
+                  Round 1 (Star Map + backend):
+                  1. expo-notifications hard-crashed the app on Android under Expo Go
+                     (SDK 53+ removed push-token auto-registration there; the package
+                     throws at import time — traced to DevicePushTokenAutoRegistration.fx.ts
+                     calling addPushTokenListener eagerly at module load).
+                     src/services/notifications.ts now guards the import behind
+                     try/catch + require(), degrading to a no-op on Android/Expo Go.
+                  2. Spin/Auction House/Fragment-combine all returned "NOT_FOUND" — the
+                     3 Supabase Edge Functions existed in the repo but were never
+                     deployed (only DB migrations had been pushed). Deployed all 3 via
+                     `supabase functions deploy`; confirmed ACTIVE.
+                  3. StarMapScreen could only scroll vertically (RN ScrollView is
+                     single-axis). Replaced with a react-native-gesture-handler
+                     Pan+Pinch gesture driving Reanimated shared values (no new
+                     dependency). Fixed a missing `insets.top` (content rendered under
+                     the status bar) and a Pan/Pinch pointer conflict (Pan wasn't
+                     restricted to `.maxPointers(1)`, so a 2-finger pinch also triggered
+                     Pan and broke zoom) — user confirmed pinch zoom in/out now works.
+                  4. The top-level `(tabs)` Star Map tab was a dead placeholder while
+                     the real exploration screen was nested at fleet/explore.tsx behind
+                     a "Star Map →" button. Moved the real screen to be the top-level
+                     tab's content, deleted fleet/explore.tsx, removed the redundant
+                     button from FleetScreen.tsx. Confirmed live: bottom tab now shows
+                     the working map directly.
 
-Current feature : Star Map & Planet Discovery (exploration system). All 10 plan tasks
-                  code-complete and tested. All 4 known bugs fixed.
+                  Round 2 (Spin UI polish, user feedback after using it):
+                  5. Free-spin cooldown set to 10 seconds for testing (marked `TEMP` in
+                     both src/constants/game.ts and supabase/functions/spin/index.ts —
+                     MUST revert to 4 hours before any real release; redeploy the spin
+                     function after reverting). Also reset the test account's
+                     spin_state.free_spin_available_at via a one-off service-role PATCH
+                     so testing wasn't blocked by the old 4h timestamp.
+                  6. Reel cards enlarged twice over the session (now CARD_WIDTH=136,
+                     CARD_HEIGHT=168 in src/ui/spin/constants.ts) and the result/reel
+                     area is now vertically centered in SpinScreen.tsx (was crammed at
+                     the top with a big empty gap below).
+                  7. Reel deceleration felt abrupt — DECEL_MS 600→900, LURCH_MS
+                     300→550, and the final "lurch to winner" phase's easing changed
+                     from `inOut(quad)` to `out(cubic)` (same curve as the prior phase)
+                     so the whole landing reads as one continuous slowdown.
+                  8. The pointer arrow above the reel visually cut into the card
+                     border — enlarged the arrow and bumped its marginBottom
+                     (4→12→20 across two attempts) for unambiguous clearance.
+                  9. Added tier-differentiated celebration animations on the result
+                     reveal (src/ui/spin/SpinResult.tsx): scale-bounce entrance +
+                     pulsing rings + outward-flying spark glyphs, with count/rings
+                     scaling by tier (common: none, uncommon: 1 ring, rare: 1 ring + 4
+                     sparks, legendary: 2 rings + 6 sparks, ultra_rare: 3 rings + 8
+                     sparks) — reuses the existing TIER_STYLES color palette. Verified
+                     no crashes across common/rare-tier live spins; the burst itself
+                     (~700ms) is too fast to catch via delayed adb screenshots, so the
+                     visual feel itself needs a live human check, not just "does it
+                     crash."
 
-Known bugs      : None outstanding from the last review.
+                  All verified live via adb (screenshots + UI Automator dumps for
+                  precise tap coordinates — the emulator's displayed image and actual
+                  touch coordinates don't map 1:1, and guessing pixel positions wasted
+                  many tap attempts before switching to `adb shell uiautomator dump` +
+                  grep for `bounds=`). Lint/tsc/Jest clean throughout (85/86, same
+                  pre-existing unrelated marketStyles.test.ts DST flake).
 
-Next task       : Manual device smoke test per the plan's Task 10 Step 4 checklist
-                  (open Fleet tab → Star Map → dispatch → wait → collect), via Expo Go
-                  on a phone (no native modules requiring a dev-client build) or an
-                  Android Studio emulator. Note: docs/overview.md flags that the
-                  top-level `(tabs)` Star Map tab is a separate, still-untouched
-                  placeholder — the real system lives under /fleet/explore. After
-                  smoke test passes, the plan is fully done — decide next system
-                  (Resource System or Tech Tree are both 🔴 Not started).
+Current feature : Star Map & Planet Discovery: fully done, verified live end-to-end.
+                  Spin: functionally complete pre-session; this session was UI/feel
+                  polish requested after the user actually played with it.
+
+Known bugs      : None outstanding. Spin reel deceleration feel and the new tier-burst
+                  animations are code-verified (no crashes, correct tier gating) but
+                  not yet subjectively confirmed by the user live (screenshots can't
+                  capture sub-second motion reliably).
+
+Next task       : User was asked what's missing to actually play the game today.
+                  Answer given: the collect-and-manage loop (Spin/Loadout/Auction
+                  House/Star Map) all works, but there's nothing to actually DO with
+                  ships yet — Combat Engine has logic (src/game/ships/CombatEngine.ts)
+                  but no UI/screen to trigger a battle. Resource System and Tech Tree
+                  are both still 🔴 Not started (collected resources + research have no
+                  sink yet). Combat UI is the highest-leverage next system if the goal
+                  is a playable game rather than a set of menus — awaiting user
+                  decision on what to build next.
+                  Also outstanding: revert the TEMP 10s free-spin interval (item 5
+                  above) before any real release.
 
 Blockers        : None.
 ```
