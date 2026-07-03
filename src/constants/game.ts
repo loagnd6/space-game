@@ -72,8 +72,30 @@ export const EXPLORATION = {
   TRAVEL_LANE_MAX_DIST:  400,
   FUEL_COST_DIVISOR:     100,
   TRAVEL_TIME_SCALE:     300,      // ms per pt of distance
-  TRAVEL_TIME_MIN_MS:    5  * 60_000,
-  TRAVEL_TIME_MAX_MS:    20 * 60_000,
+  TRAVEL_TIME_MIN_MS:    90_000,        // 1.5 minutes
+  TRAVEL_TIME_MAX_MS:    30 * 60_000,   // 30 minutes
   FRAGMENT_BASE_CHANCE:  0.08,
   FRAGMENT_DANGER_BONUS: 0.02,
+} as const;
+
+// --- Battle Arena / Progression ---
+export const BATTLE = {
+  PLAYER_LEVEL_CAP:         30,
+  XP_CURVE_BASE:            100,   // xpToNext(level) = round(BASE * level^EXP)
+  XP_CURVE_EXP:             1.5,
+  CONSOLATION_RATE:         0.15,  // non-first-win-of-day reward fraction (ceil)
+  SKIRMISH_XP_PER_TIER:     50,
+  SKIRMISH_LUMENS_PER_TIER: 25,
+  SKIRMISH_SALVAGE_PER_TIER: 10,
+  PVP_REWARD_MULTIPLIER:    1.5,   // × highest-unlocked-tier full reward
+  PVP_DAILY_WIN_CAP:        5,     // paid wins per UTC day, then consolation
+  PVP_CHALLENGE_RANGE:      5,     // may challenge the N ranks directly above
+} as const;
+
+export const SHIP_LEVELING = {
+  LEVEL_CAP:             20,
+  STAT_BONUS_PER_LEVEL:  0.02,  // +2% HP/damage/shields per level above 1
+  LUMENS_BASE_COST:      200,   // cost(level n → n+1) = round(BASE * GROWTH^(n-1))
+  LUMENS_COST_GROWTH:    1.5,
+  SALVAGE_COST_PER_LEVEL: 10,   // salvage cost = 10 × current level
 } as const;

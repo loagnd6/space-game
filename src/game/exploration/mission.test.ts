@@ -36,11 +36,11 @@ describe('calculateFuelCost', () => {
 });
 
 describe('calculateTravelTime', () => {
-  it('clamps to 5-minute minimum', () => {
+  it('clamps to 90-second minimum', () => {
     expect(calculateTravelTime({ x: 0, y: 0 }, { x: 1, y: 0 }))
       .toBe(EXPLORATION.TRAVEL_TIME_MIN_MS);
   });
-  it('clamps to 20-minute maximum', () => {
+  it('clamps to 30-minute maximum', () => {
     expect(calculateTravelTime({ x: 0, y: 0 }, { x: 99999, y: 0 }))
       .toBe(EXPLORATION.TRAVEL_TIME_MAX_MS);
   });

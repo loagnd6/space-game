@@ -7,7 +7,8 @@ export type ItemType =
   | 'ship_component'
   | 'component_fragment'
   | 'spin_ticket'
-  | 'cosmetic_skin';
+  | 'cosmetic_skin'
+  | 'wormhole';
 
 export interface InventoryItem {
   id: string;
