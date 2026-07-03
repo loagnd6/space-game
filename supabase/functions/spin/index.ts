@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // --- Inlined from src/game/spin/lootTable.ts (Deno can't import from src/) ---
 const SPIN_LOOT_WEIGHTS = { common: 0.600, uncommon: 0.250, rare: 0.120, legendary: 0.025, ultra_rare: 0.005 };
 const PITY_THRESHOLD = 50;
-const FREE_SPIN_INTERVAL_HOURS = 4;
+// TEMP for testing — real design value is 4 (hours). Revert before release.
+const FREE_SPIN_INTERVAL_HOURS = 10 / 3600;
 const SLOTS = ['hull', 'weapons', 'shields', 'engine'] as const;
 type LootTier = 'common' | 'uncommon' | 'rare' | 'legendary' | 'ultra_rare';
 type SpinType = 'free' | 'ticket' | 'premium';

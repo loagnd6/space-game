@@ -87,17 +87,17 @@ const styles = StyleSheet.create({
   shimmer: {
     borderRadius: RADIUS.md,
   },
-  icon: { fontSize: 28 },
+  icon: { fontSize: 46 },
   label: {
     color: COLORS.text,
-    fontSize: FONT.sm - 2,
+    fontSize: FONT.md,
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: 6,
   },
   sublabel: {
     color: COLORS.muted,
-    fontSize: 10,
+    fontSize: 12,
     marginTop: 2,
   },
 });

@@ -25,7 +25,8 @@ export const SPIN_LOOT_WEIGHTS = {
 } as const;
 
 export const PITY_THRESHOLD = 50;
-export const FREE_SPIN_INTERVAL_HOURS = 4;
+// TEMP for testing — real design value is 4 (hours). Revert before release.
+export const FREE_SPIN_INTERVAL_HOURS = 10 / 3600;
 export const PREMIUM_SPIN_DAILY_CAP = 1;
 export const FRAGMENT_COMBINE_COUNT = 3; // 3 fragments → 1 Uncommon component
 export const SPIN_TICKET_RAID_DROP_CHANCE = 0.10; // 10% on raid win

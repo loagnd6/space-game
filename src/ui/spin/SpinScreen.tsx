@@ -68,13 +68,15 @@ export function SpinScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Spin</Text>
 
-        <View style={styles.reelSection}>
-          <SpinReel ref={reelRef} items={reelItems} centerIndex={centerIndex} />
-        </View>
+        <View style={styles.content}>
+          <View style={styles.reelSection}>
+            <SpinReel ref={reelRef} items={reelItems} centerIndex={centerIndex} />
+          </View>
 
-        <View style={styles.resultSection}>
-          <SpinResult item={resultItem} />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.resultSection}>
+            <SpinResult item={resultItem} />
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+          </View>
         </View>
 
         <View style={styles.buttonsSection}>
@@ -100,8 +102,9 @@ const styles = StyleSheet.create({
     gap: SPACING.xl,
   },
   title: { color: COLORS.text, fontSize: FONT.xl, fontWeight: '700' },
+  content: { flex: 1, justifyContent: 'center', gap: SPACING.xl },
   reelSection: { alignItems: 'center' },
   resultSection: {},
-  buttonsSection: { marginTop: 'auto', paddingBottom: SPACING.lg },
+  buttonsSection: { paddingBottom: SPACING.lg },
   error: { color: COLORS.danger, fontSize: FONT.sm, marginTop: SPACING.sm, textAlign: 'center' },
 });

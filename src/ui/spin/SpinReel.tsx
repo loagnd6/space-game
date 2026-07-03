@@ -51,12 +51,14 @@ export const SpinReel = forwardRef<SpinReelHandle, Props>(function SpinReel(
             onDone();
             return;
           }
-          // Phase 3: brief pause, then lurch to winner
+          // Phase 3: brief pause, then a final smooth decelerate to the true winner
+          // (same ease-out curve as phase 2, so the settle reads as one continuous
+          // slowdown rather than a snap)
           setTimeout(() => {
             Animated.timing(translateX, {
               toValue: toOffset(WINNER_INDEX),
               duration: ANIM.LURCH_MS,
-              easing: Easing.inOut(Easing.quad),
+              easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }).start(() => onDone());
           }, ANIM.PAUSE_MS);
@@ -84,13 +86,13 @@ const styles = StyleSheet.create({
   pointer: {
     width: 0,
     height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 12,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderTopWidth: 18,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: COLORS.primary,
-    marginBottom: 4,
+    marginBottom: 20,
   },
   clip: {
     width: REEL_CONTAINER_WIDTH,
